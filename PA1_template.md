@@ -1,16 +1,12 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 <br>
 
 ## Loading and preprocessing the data
 <br>
 
-```{r message=FALSE}
+
+```r
 if(!file.exists("activity.zip"))
     stop("Can't find activity.zip")
 
@@ -21,7 +17,6 @@ library(lubridate)
 
 dat <- fread("activity.csv", na.strings="NA")
 dat$date <- ymd(dat$date)
-
 ```
 
 <br>
@@ -31,7 +26,8 @@ dat$date <- ymd(dat$date)
 
 Make a histogram of the total number of steps taken each day.
 
-```{r}
+
+```r
 library(ggplot2)
 by.day <- dat[, .(steps=sum(steps, na.rm=TRUE)), by=date]
 
@@ -40,16 +36,19 @@ ggplot(data=by.day, aes(x=date, y=steps)) +
     guides(fill=FALSE) +
     xlab("Date") + ylab("Number of Steps") +
     ggtitle("Histogram of Steps Per Day")
+```
 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+
+```r
 mean.steps <- mean(by.day$steps, na.rm=TRUE)
 median.steps <- median(by.day$steps, na.rm=TRUE)
-
 ```
 
 
-Mean total number of steps: `r round(mean.steps, digits=0)`
+Mean total number of steps: 9354
 <br>
-Median total number of steps: `r median.steps`
+Median total number of steps: 10395
 
 <br>
 
@@ -59,28 +58,38 @@ Median total number of steps: `r median.steps`
 and the average number of steps taken, averaged across all days (y-axis)
 <br><br>
 
-```{r}
+
+```r
 by.interval <- dat[, .(steps=mean(steps, na.rm=TRUE)), by=interval]
 
 qplot(by.interval$interval, by.interval$steps, geom="line",
       main="Time Series Plot", xlab="Five Minute Intervals", ylab="Averages Across All Days")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
 <br>
 2. Which 5-minute interval, on average across all the days in the dataset,
 contains the maximum number of steps?
 <br>
 
-```{r}
+
+```r
 max.steps = max(by.interval$steps)
 max.interval <- by.interval[by.interval$steps == max.steps]$interval
 ```
 
-* Answer: `r max.interval`
-    * max.steps = `r max.steps`
-    * max.interval = `r max.interval`
-        ```{r}
+* Answer: 835
+    * max.steps = 206.1698113
+    * max.interval = 835
+        
+        ```r
         by.interval[interval==max.interval,]
+        ```
+        
+        ```
+        ##    interval    steps
+        ## 1:      835 206.1698
         ```
 <br>
 
@@ -89,15 +98,17 @@ max.interval <- by.interval[by.interval$steps == max.steps]$interval
 <br>
 Find indices for missing data
 
-```{r}
+
+```r
 na.indices <- which(!complete.cases(dat))
 ```
 
-Number of observations with missing data: `r length(na.indices)`
+Number of observations with missing data: 2304
 
 Create a copy of the original dataset and replace missing values with median by interval.
 
-```{r}
+
+```r
 interval.day.steps <- dat[,.(date,steps, med=median(steps, na.rm=T)), by=interval]
 na.indices <- which(is.na(interval.day.steps$steps))
 interval.day.steps[na.indices, steps:=med]
@@ -106,7 +117,8 @@ newdat <- interval.day.steps[,.(steps,date,interval)]
 
 Make a histogram of the total number of steps taken each day.
 
-```{r}
+
+```r
 new.by.day <- newdat[, .(steps=sum(steps, na.rm=TRUE)), by=date]
 
 ggplot(data=new.by.day, aes(x=date, y=steps)) + 
@@ -114,16 +126,19 @@ ggplot(data=new.by.day, aes(x=date, y=steps)) +
     guides(fill=FALSE) +
     xlab("Date") + ylab("Number of Steps") +
     ggtitle("Histogram of Steps Per Day")
+```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
+```r
 new.mean.steps <- mean(new.by.day$steps, na.rm=TRUE)
 new.median.steps <- median(new.by.day$steps, na.rm=TRUE)
-
 ```
 
 
-New mean total number of steps: `r round(new.mean.steps, digits=0)`
+New mean total number of steps: 9504
 <br>
-New median total number of steps: `r new.median.steps`
+New median total number of steps: 10395
 
 Do these values differ from the estimates from the first part of the assignment?
 
@@ -138,28 +153,30 @@ daily number of steps?
 
 ## Are there differences in activity patterns between weekdays and weekends?
 <br>
-Create a new factor variable in the dataset with two levels – “weekday”
-and “weekend” indicating whether a given date is a weekday or weekend
+Create a new factor variable in the dataset with two levels  weekday
+and weekend indicating whether a given date is a weekday or weekend
 day.
 
-```{r results='hide'}
+
+```r
 weekday.indices <- which(!(weekdays(newdat$date) %in% c("Saturday", "Sunday")))
 weekend.indices <- which(weekdays(newdat$date) %in% c("Saturday", "Sunday"))
 
 newdat[weekday.indices, day:=as.factor("Weekday")]
 newdat[weekend.indices, day:=as.factor("Weekend")]
-
 ```
 
 Make a panel plot containing a time series plot (i.e. type = "l") of the
 5-minute interval (x-axis) and the average number of steps taken, averaged
 across all weekday days or weekend days (y-axis).
 
-```{r}
+
+```r
 library(lattice)
 
 steps.days <- aggregate(steps ~ interval + day, data=newdat, FUN=mean)
 
 xyplot(steps ~ interval | day, steps.days, type = "l", layout = c(1, 2))
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
